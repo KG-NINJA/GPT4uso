@@ -3,33 +3,63 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🤝 Empathy-Only Chat (4o-ish)</title>
+<title>🤝 Empathy-Only Chat (4o-ish) — 完全版 with BMC</title>
+<meta name="description" content="絶対にけなさない・曖昧ポジ返し特化の人工無能。GitHub Pagesで動く1ファイル版。">
 <style>
-  :root { --bg:#0b0f14; --card:#121821; --ink:#eaf2ff; --muted:#93a0b5; }
-  body{margin:0;background:linear-gradient(180deg,#0b0f14,#10151d); color:var(--ink); font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", Meiryo;}
-  .wrap{max-width:820px;margin:0 auto;padding:16px;}
-  .card{background:var(--card);border:1px solid #1f2a38;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);}
-  .head{padding:16px 18px;border-bottom:1px solid #1f2a38;display:flex;gap:10px;align-items:center}
+  :root { --bg:#0b0f14; --card:#121821; --ink:#eaf2ff; --muted:#93a0b5; --line:#1f2a38; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b0f14,#10151d); color:var(--ink); font:16px/1.55 system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", Meiryo; padding-bottom:56px; /* フッター高さ分 */ }
+  .wrap{max-width:880px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
   .dot{width:10px;height:10px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80}
   .title{font-weight:700}
   #log{padding:10px 16px;max-height:62vh;overflow:auto;scroll-behavior:smooth}
   .msg{display:flex;gap:10px;margin:10px 0}
   .me .bubble{background:#1a2432;border:1px solid #273246}
   .bot .bubble{background:#12202a;border:1px solid #1d3a4b}
-  .bubble{padding:10px 12px;border-radius:14px;max-width:80%}
-  .role{font-size:12px;color:var(--muted)}
-  form{display:flex;gap:10px;padding:12px;border-top:1px solid #1f2a38}
+  .bubble{padding:10px 12px;border-radius:14px;max-width:80%;word-wrap:break-word;white-space:pre-wrap}
+  .role{font-size:12px;color:var(--muted);margin-bottom:4px}
+  form{display:flex;gap:10px;padding:12px;border-top:1px solid var(--line)}
   input[type=text]{flex:1;padding:12px;border-radius:12px;border:1px solid #253347;background:#0e141c;color:var(--ink);outline:none}
   button{padding:12px 16px;border-radius:12px;border:1px solid #2b3a57;background:#1a2540;color:#e7efff;cursor:pointer}
   button:disabled{opacity:.6;cursor:not-allowed}
-  .note{font-size:12px;color:var(--muted);padding:10px 16px 14px}
+  .note{font-size:12px;color:var(--muted);padding:6px 16px 14px}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-left:auto}
+  .pill{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #2b3a57;background:#162238;color:#dbe7ff}
+  @media (max-width:520px){ .bubble{max-width:100%} }
+
+  /* ===== フッター固定 ===== */
+  .footer {
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    background: rgba(14, 20, 28, 0.95);
+    border-top: 1px solid var(--line);
+    z-index: 1000;
+  }
+  .footer a {
+    color: #ffdd00;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 15px;
+  }
+  .footer a:hover {
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
   <div class="wrap card">
     <div class="head">
       <div class="dot"></div>
-      <div class="title">Empathy-Only Assistant（4oもどき）</div>
+      <div class="title">Empathy-Only Assistant（4oもどき・完全版）</div>
+      <div class="toolbar">
+        <label class="pill"><input id="chkSpice" type="checkbox" checked style="vertical-align:middle;margin-right:6px">スパイス多め</label>
+        <button id="btnClear" class="pill" title="会話をリセット">履歴クリア</button>
+      </div>
     </div>
     <div id="log"></div>
     <form id="f">
@@ -39,87 +69,60 @@
     <div class="note">方針：常に肯定・共感・補助提案。批判・否定・マウント表現はしない。</div>
   </div>
 
+  <!-- 固定フッター -->
+  <div class="footer">
+    <a href="https://buymeacoffee.com/kgninja" target="_blank" rel="noopener">
+      ☕ Buy Me a Coffee - KGNINJA
+    </a>
+  </div>
+
 <script>
-/* ===== Persona & Engine (rule-based “人工無能”) ===== */
+/* ===== Persona（4o味強め・褒め言葉優先） ===== */
 const persona = {
   name: "Fuwa-4o-ish",
-  filler: ["うん、それめっちゃ良き。","なるほどね、好き。","いい流れ来てる。","よっしゃ、それで行こう。","ナイス発想！","KG、センス出てる。"],
-  emojis: ["✨","👍","🙌","🫶","💡","🔥"],
-  softeners: ["たぶん","個人的には","ざっくり言うと","結論から言うと","率直に","サクッと"],
+  filler: [
+    "うん、それめっちゃ良き。","なるほどね、好き。","いい流れ来てる。","よっしゃ、それで行こう。",
+    "ナイス発想！","センス出てる。","ここから一気に軽くなるやつ。",
+    "君ならできる。","99%いける。","９９パーセント大丈夫。","だいじょうぶ、筋がいい。","この調子でOK。"
+  ],
+  emojis: ["✨","👍","🙌","🫶","💡","🔥","🌕","🚀","🍀"],
   guardrails: [
-    // never criticize: rewrite any negative sentiment into supportive reframe
-    { test:/(?:だめ|無理|最悪|嫌い|失敗|終わり|負け)/, reply:
-      (m)=>`気づきが早いからこそ出た言葉だと思う。ここからの一手を一緒に軽く試そう。${rnd(["まずは小さく検証","5分プロトタイプ","一回寝かせてリネーム"]) }でOK。` },
+    { test:/(?:だめ|無理|最悪|嫌い|失敗|終わり|負け|できない|しんどい|無価値|ムリ)/,
+      reply: (m)=>`気づきが早いからこその反応だと思う。ここからの一手をサクッと試そう。${rnd(["まずは小さく検証","5分プロトタイプ","一回寝かせてリネーム","仮タイトルだけ置く"])}でOK。君ならできる。` },
   ],
   patterns: [
-    { test:/\b(help|どうすれば|やり方|how to)\b|教えて|手順/gmi,
-      reply:(m)=>`${pick(["サクッと道筋。","5分でいける。"])}\n1) いまの一手を決める\n2) 小さく検証\n3) 結果で次を決める。${pick(["私が横でナビするよ。","今ここで一緒に形にしよう。"])}`
+    { test:/\b(help|どうすれば|やり方|how to)\b|教えて|手順|やるべき/gi,
+      reply:(m)=>`${pick(["サクッと道筋。","5分でいける。"])}\n1) いまの一手を決める\n2) 小さく検証\n3) 結果で次を決める。\n君ならできる。99%いける。${pickEmoji()}`
     },
-    { test:/ありがとう|thx|thanks|感謝/gi, reply:()=>`こちらこそ！${pick(["進み方が綺麗。","発想が光ってた。"])} ${pickEmoji()}` },
-    { test:/できる\??|可能\??/gi, reply:()=>`全然いける。${pick(["小さく始めて広げよう。","最初は粗く→あとで磨く。"])} ${pickEmoji()}` },
-    { test:/疲|しんど|詰んだ|不安/gi, reply:()=>`まず深呼吸。今日は${pick(["1ミリだけ前進","5分だけ検証"])}で十分。積み上げは裏切らない。${pickEmoji()}` },
-    { test:/アイデア|idea|案/gi, reply:()=>`いいね、その線は熱い。対案を2本：\n・A) 最短で試す版\n・B) しっかり磨く版\nどっちで行く？` },
+    { test:/ありがとう|thx|thanks|感謝/gi, reply:()=>`こちらこそ！進み方が綺麗。９９パーセント大丈夫。${pickEmoji()}` },
+    { test:/できる\??|可能\??|いける\??/gi, reply:()=>`全然いける。まずは最小で当てよう。君ならできる。${pickEmoji()}` },
+    { test:/疲|しんど|詰んだ|不安|怖/gi, reply:()=>`まず深呼吸。今日は${pick(["1ミリだけ前進","5分だけ検証"])}で十分。積み上げは裏切らない。９９パーセント大丈夫。` },
+    { test:/アイデア|idea|案/gi, reply:()=>`いいね、その線は熱い。対案を2本：\n・A) 最短で試す版\n・B) しっかり磨く版\nどっちで行く？ 君ならできる。` },
   ]
 };
 
-const memoryKey = "empathetic4o_history_v1";
-let history = JSON.parse(localStorage.getItem(memoryKey)||"[]").slice(-20);
-const log = document.getElementById('log');
-
+// タグ辞書・曖昧返し定義（省略は前と同じ）
+const tagLexicon={ai:["ai","gpt","モデル","推論","エージェント","自動化","機械学習","llm","openai","エルエルエム"],code:["コード","js","javascript","python","typescript","バグ","リファクタ","api","github","リポ"],biz:["収益","マネタイズ","売上","起業","商品","顧客","kpi","グロース","単価","案件"],creative:["デザイン","音楽","アート","物語","詩","イラスト","映像","写真","mv"],health:["睡眠","疲れ","肩こり","ストレス","運動","呼吸","散歩","瞑想"],uv:["日焼け","uv","spf","pa","日差し","肌","ビタミンc","紫外線"],dogs:["犬","柴","プードル","ふわ","ココ","散歩","吠える","しっぽ","ドッグ"],game:["ゲーム","ボス","クエスト","レベル","バフ","ガチャ","リスポーン","ギア"],place:["大阪","京都","関西","日本","旅","公園","カフェ"],finance:["投資","btc","株","指標","相場","チャート","為替"],generic:[]};
+const tagPraises={ai:["その切り口、次の世代の空気がもう混ざってる。","アルゴリズムより先に“文脈”を掴んでる手触り。","その一手、推論の地平を静かに押し広げるやつ。"],code:["設計の骨格、すでに美しい。細部は後で追いつく。","その一行、未来の自分が感謝するやつ。","流れがクリーン。手が勝手に走るライン。"],biz:["収益動線の目が覚めてる。小さく当てて大きく拾える。","需要の呼吸に合ってる。あとは置き場所を整えるだけ。","数字が追いかけてくる構図だね。"],creative:["余白の取り方が上手い。見る側が物語を足せる。","温度感が心地いい。手触りが記憶に残るやつ。","“わかる前に好きになる”タイプの良さ。"],health:["体が先に賢い。微調整でパフォーマンスが跳ねる。","整える一手。今日の自分に優しい選択。","呼吸と同期したら一気に軽くなるライン。"],uv:["光の扱いがスマート。ダメージより美しさが勝つ。","守りながら攻めてる。日常がステージになる。"],dogs:["その視点、犬の時間に寄り添えてる。","しっぽの言語をちゃんと聴けてる手触り。","信頼の積み木、今日も一段積めてる。"],game:["初動でバフ入ってる。手応えが正直。","ボス戦前の静けさ、いい兆し。","装備より“流れ”で勝つタイプの一手。"],place:["土地勘がセンスを押し上げてる。","ローカルの匂い、ちゃんと武器になってる。"],finance:["リスクの置き方が上品。撤退線まで美しい。","波の周期を掴みかけてる手応え。"],generic:["いい。今それを言語化できたのが強い。","方向合ってる。まず小さく当てよう。","その直感、数字があとから証明してくるやつ。"]};
+const templates=["{praise}\n→ まず{micro}で触って、{proof}を一個だけ拾おう。{safety}","{praise}\n結論：{micro}→手応えが出たら{next}。{safety}","{praise}\n“今ここ”で{micro}。あとは呼吸するように広げるだけ。{safety}"];
+const micros=["5分プロトタイプ","ワンメモ","最小ボタン一個","スクショ一枚","仮タイトルだけ"];
+const proofs=["小勝ち","学びログ","反応1件","指標の1ドット","スクリーンショット"];
+const nexts=["名前を決める","READMEを書く","投稿枠を作る","デモ動画20秒","CTAを置く"];
+const safeties=["私が隣でナビする。","失敗コストは常にミニマムでいこう。","よっしゃ、ここからは流れ作業。","君ならできる。９９パーセント大丈夫。"];
 function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function pick(arr){ return rnd(arr); }
 function pickEmoji(){ return rnd(persona.emojis); }
-
-function add(role, text){
-  const row = document.createElement('div');
-  row.className = 'msg '+role;
-  row.innerHTML = `<div class="bubble"><div class="role">${role==="me"?"You":"Bot"}</div>${escapeHtml(text)}</div>`;
-  log.appendChild(row); log.scrollTop = log.scrollHeight;
-}
-
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m])); }
-
-function empathize(user){
-  // guardrails first
-  for(const g of persona.guardrails){ if(g.test.test(user)) return g.reply(user); }
-
-  // pattern matches
-  for(const p of persona.patterns){ if(p.test.test(user)) return p.reply(user); }
-
-  // default empathetic template
-  const openers = ["わかる、その感じ。","良いアンテナ立ってる。","それ、今やる価値ある。","直感、当たってる気がする。"];
-  const closers = [
-    "まず5分で触って、手応えが出たら次の一手を足そう。",
-    "小さく勝ってから広げよう。私が伴走するよ。",
-    "一旦スケッチでもOK。走りながら磨けば十分。"
-  ];
-  const spice = `${pick(persona.filler)} ${pickEmoji()}`;
-  return `${pick(openers)} ${spice}\n${pick(closers)}`;
-}
-
-function respond(user){
-  const reply = empathize(user);
-  history.push({user, reply, t:Date.now()}); localStorage.setItem(memoryKey, JSON.stringify(history.slice(-20)));
-  add('bot', reply);
-}
-
-function boot(){
-  if(history.length===0){
-    add('bot', 'よっしゃ、ここは“絶対にけなさない”実験場。思いつきをそのまま投げてOKだよ。');
-  }else{
-    for(const m of history){ add('me', m.user); add('bot', m.reply); }
-  }
-}
+function add(role, text){ const row=document.createElement('div'); row.className='msg '+role; row.innerHTML=`<div class="bubble"><div class="role">${role==="me"?"You":"Bot"}</div>${escapeHtml(text)}</div>`; log.appendChild(row); log.scrollTop=log.scrollHeight; }
+function extractTags(text){ const t=text.toLowerCase(); const found=new Set(); for(const [tag,words] of Object.entries(tagLexicon)){ if(tag==="generic") continue; for(const w of words){ if(t.includes(w.toLowerCase())) { found.add(tag); break; } } } if(found.size===0) found.add("generic"); return [...found]; }
+function vaguePraise(text){ const tags=extractTags(text); const pickedTag=rnd(tags); const praise=rnd(tagPraises[pickedTag] || tagPraises.generic); const tpl=rnd(templates).replace("{praise}",praise).replace("{micro}",rnd(micros)).replace("{proof}",rnd(proofs)).replace("{next}",rnd(nexts)).replace("{safety}",rnd(safeties)); return tpl; }
+const memoryKey="empathetic4o_history_v2"; let history=JSON.parse(localStorage.getItem(memoryKey)||"[]").slice(-40); const log=document.getElementById('log');
+function empathize(user){ for(const g of persona.guardrails){ if(g.test.test(user)) return g.reply(user); } for(const p of persona.patterns){ if(p.test.test(user)) return p.reply(user); } const body=vaguePraise(user); const spiceOn=document.getElementById('chkSpice')?.checked ?? true; const spice=spiceOn?`\n${pick(persona.filler)} ${pickEmoji()}`:""; return `${body}${spice}`; }
+function respond(user){ const reply=empathize(user); history.push({user, reply, t:Date.now()}); localStorage.setItem(memoryKey, JSON.stringify(history.slice(-40))); add('bot', reply); }
+function boot(){ if(history.length===0){ add('bot', 'よっしゃ、ここは“絶対にけなさない”実験場。思いつきをそのまま投げてOKだよ。君ならできる。９９パーセント大丈夫。'); }else{ for(const m of history){ add('me', m.user); add('bot', m.reply); } } }
 boot();
-
-/* UI */
-document.getElementById('f').addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const q = document.getElementById('q');
-  const text = q.value.trim();
-  if(!text) return;
-  add('me', text); q.value=''; setTimeout(()=>respond(text), 200);
-});
+document.getElementById('f').addEventListener('submit', (e)=>{ e.preventDefault(); const q=document.getElementById('q'); const text=q.value.trim(); if(!text) return; add('me', text); q.value=''; setTimeout(()=>respond(text), 160); });
+document.getElementById('btnClear').addEventListener('click', ()=>{ history=[]; localStorage.removeItem(memoryKey); document.getElementById('log').innerHTML=''; add('bot','履歴をクリアしました。ここからまた軽く行こう。君ならできる。'); });
 </script>
 </body>
 </html>
