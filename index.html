@@ -82,13 +82,11 @@ const lastFiredAt = new Map(); // key=ruleKey, value=timestamp
 const rules = [
   // あいさつ
   rule("greet.morning", /(おはよう|ohayou|good\s*morning)/i,
-
   // さようなら
   rule("bye", /(さよなら|バイ|bye|see\s*you|またね)/i,
     ()=> pick(["またね。ログは残しておくよ。","See you! 君ならまたすぐ進める。","いつでも戻ってきて。待ってるよ。","また話そうね、ゆっくり休んで。"])),
   // 簡易自己紹介
   rule("who", /(だれ|誰|name|君はだれ|あなたは誰|who\s*are\s*you)/i,
-
   rule("ai", /(ai|gpt|llm|エージェント|機械学習|推論|自動化|openai)/i,
     ()=> pick(["文脈を掴む手が早い。","その一手、推論の地平を静かに押し広げるやつ。","その発想、未来の空気を先取りしてる。","静かに革命を起こしてる手触り。"])),
   // 地名・ローカル
