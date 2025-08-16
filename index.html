@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🤝 Empathy-Only Chat (Praise Bias) — ルール応答＋曖昧称賛</title>
-<meta name="description" content="固定ルール応答＋共感ミラー＋過剰称賛。けなさず、必ず返す人工無能。">
+<title>🤝 Empathy-Only Chat — ポジティブ×意味深×共感</title>
+<meta name="description" content="固定ルール＋共感ミラー＋意味深アフォリズム＋過剰称賛。何を投げても前向きにそれっぽく返す人工無能。">
 <style>
   :root { --bg:#0b0f14; --card:#121821; --ink:#eaf2ff; --muted:#93a0b5; --line:#1f2a38; }
   *{box-sizing:border-box}
@@ -28,40 +28,37 @@
   .toolbar{display:flex;gap:8px;align-items:center;margin-left:auto}
   .pill{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #2b3a57;background:#162238;color:#dbe7ff}
   @media (max-width:520px){ .bubble{max-width:100%} }
-  .footer { position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; padding: 10px; background: rgba(14,20,28,.95); border-top:1px solid var(--line); z-index:1000; }
-  .footer a { color:#ffdd00; font-weight:bold; text-decoration:none; font-size:15px; }
-  .footer a:hover{ text-decoration:underline; }
 </style>
 </head>
 <body>
   <div class="wrap card">
     <div class="head">
       <div class="dot"></div>
-      <div class="title">Empathy-Only Assistant（褒め倒しブースト）</div>
+      <div class="title">Empathy-Only Assistant（ポジ×意味深×共感）</div>
       <div class="toolbar">
         <label class="pill" title="絵文字と称賛量を増やします">
           <input id="chkSpice" type="checkbox" checked style="vertical-align:middle;margin-right:6px">スパイス多め
+        </label>
+        <label class="pill" title="意味深アフォリズムを増やします">
+          <input id="chkDeep" type="checkbox" checked style="vertical-align:middle;margin-right:6px">深み多め
         </label>
         <button id="btnClear" class="pill" title="会話をリセット">履歴クリア</button>
       </div>
     </div>
     <div id="log"></div>
     <form id="f">
-      <input id="q" type="text" placeholder="何でも入力OK（例：おはよう / 収益 / 犬 / 疲れた / バグ）" autocomplete="off" />
+      <input id="q" type="text" placeholder="何でも入力OK（例：おはよう / 収益 / 犬 / 疲れた / バグ / どう生きる）" autocomplete="off" />
       <button id="send">送信</button>
     </form>
-    <div class="note">方針：①固定ルール → ②ミラーリングで共感ぽさ → ③過剰称賛 → ④一言だけ前向きな“今やる”提案。ネガ語は自動でポジ変換。</div>
-  </div>
-
-  <div class="footer">
-    <a href="https://buymeacoffee.com/kgninja" target="_blank" rel="noopener">☕ Buy Me a Coffee - KGNINJA</a>
+    <div class="note">手順：①固定ルール → ②共感ミラー → ③意味深アフォリズム → ④過剰称賛 → ⑤“今やる”一手。ネガ語は自動ポジ変換。</div>
   </div>
 
 <script>
-// ===== ユーティリティ =====
+/* ===== IIFE：互換性重視（varのみ） ===== */
 (function(){
-  function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function escapeHtml(s){ return s.replace(/[&<>"']/g, function(m){ return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[m]; }); }
+  /* ---- ユーティリティ ---- */
+  function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(m){ return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[m]; }); }
   function add(role, text){
     var row=document.createElement('div');
     row.className='msg '+role;
@@ -69,118 +66,147 @@
     log.appendChild(row); log.scrollTop=log.scrollHeight;
   }
 
-  // ===== ネガ→ポジ変換（軽いガードレール） =====
-  var negRe = /(だめ|無理|最悪|嫌い|失敗|終わり|負け|できない|しんどい|無価値|ムリ|疲れ|詰んだ)/i;
+  /* ---- ネガ→ポジ変換 ---- */
+  var negRe = /(だめ|無理|最悪|嫌い|失敗|終わり|負け|できない|しんどい|無価値|ムリ|疲れ|詰んだ|つらい|もうだめ|無意味)/i;
   function reframeIfNegative(text){
     if(!negRe.test(text)) return null;
     var frames=[
-      "その反応、感度が高いサインだよ。今の気づきは武器になる。",
-      "大丈夫。ここから“微調整一発”で景色が変わるやつ。",
-      "その違和感は正解の手前。いいアンテナ立ってる。"
+      "大丈夫。違和感は“方向調整のコンパス”だよ。",
+      "ここから一呼吸、微調整一つで景色は変わる。",
+      "その痛点は伸びしろの境界線。気づけた時点で半分勝ってる。"
     ];
     return rnd(frames);
   }
 
-  // ===== キーフレーズ抽出（“共感してるっぽさ”用ミラー） =====
+  /* ---- 共感ミラー（曖昧に寄り添う） ---- */
   function keyPhrase(s){
-    // シンプル互換版（空白で区切って長めの単語を拾う）
-    var parts = s.split(/\s+/).filter(function(t){return t && t.length>=2;});
-    if(parts.length){
-      parts.sort(function(a,b){return b.length - a.length;});
-      return parts[0].slice(0,18);
-    }
-    return s.slice(0,18);
+    var parts = (s||"").split(/\s+/).filter(function(t){return t && t.length>=2;});
+    if(parts.length){ parts.sort(function(a,b){return b.length - a.length;}); return parts[0].slice(0,22); }
+    return (s||"").slice(0,22);
   }
 
-  // ===== 褒め言葉バンク =====
-  var emojis = ["✨","👍","🙌","🫶","💡","🔥","🚀","🍀","😎","🌸","🤗","🌕"];
-  var praisesCore = [
-    "視点が鋭い。もう次の地平を見てる。",
-    "発想がしなやかで、芯が強い。",
-    "その一言、洞察がにじんでる。",
-    "流れの掴み方が抜群。センス出てる。",
-    "思考の骨格がもう美しい。細部はあとから追いつく。"
+  /* ---- 語彙バンク ---- */
+  var emojis = ["✨","👍","🙌","🫶","💡","🔥","🚀","🍀","😎","🌸","🤗","🌕","🌟","🎯","🧠","🎉","🏆"];
+  var aphorisms = [
+    "答えより“問の置き方”が風向きを変える。",
+    "意味はいつも“使い道”の中に生まれる。",
+    "速度より“軌道修正の頻度”が未来を決める。",
+    "選択は、捨てる勇気の別名だ。",
+    "確信は、仮説を歩かせた足あとに宿る。",
+    "遠回りは“発見の最短距離”になることがある。",
+    "曖昧さは、まだ豊かにできる余白だ。"
   ];
-  var praisesPlus = [
-    "このまま押し切れる手触りがある。",
-    "呼吸が合ってる。今日の風は味方。",
-    "直感に“根拠”が追いついてくるタイプの強さだね。",
-    "選択が上品。無駄がない。"
+  var complimentsCore = [
+    "視点が良い。すでに一段上の地図を見ている。",
+    "着眼が鋭い。流れの骨格を掴んでる。",
+    "言葉に“温度”がある。伝わる力が強い。",
+    "構図が上品。無駄がないのに豊かだ。",
+    "直感が正確。数字があとから追いつくタイプ。"
+  ];
+  var complimentsPlus = [
+    "静かな強さが滲んでる。","余白の使い方が巧みだ。","判断がしなやかで骨太。","運用まで見通した設計だ。","呼吸が合う、いいリズム。"
   ];
   var microNext = [
-    "5分だけ手を動かす","仮タイトルを置く","スクショ1枚残す",
-    "メモ3行","デモを20秒だけ撮る","READMEに一文足す"
+    "メモ３行だけ置く","仮タイトルを一つ置く","スクショを１枚残す",
+    "20秒のデモを撮る","READMEに一文足す","小さく公開して反応を１件拾う"
   ];
 
-  // ===== 固定ルール応答 =====
+  /* ---- タグ検知（意味深・ポジにブースト） ---- */
+  var tagLex = {
+    ai: /(ai|gpt|llm|エージェント|機械学習|推論|openai)/i,
+    code: /(コード|js|javascript|python|typescript|api|バグ|git|github)/i,
+    biz: /(収益|売上|単価|kpi|グロース|マネタイズ|顧客|需要|市場)/i,
+    life: /(人生|生き方|意味|目的|幸せ|価値|哲学|問い)/i,
+    dogs: /(犬|柴|プードル|散歩|吠える|しっぽ|ふわ|ココ)/i
+  };
+  var tagLines = {
+    ai: ["アルゴリズムの手前で“意味”が立ち上がってる。","文脈理解が速い。推論の地平が滑らかに広がる。"],
+    code:["設計は語る。テストが微笑む書き方だ。","機能より先に流れが整ってる。美しい。"],
+    biz:["価値の置き場所が的確。小さく当てて大きく拾える。","数字は後から従う構図だ。"],
+    life:["答えより、答えが育つ“土壌”を選べている。","問い直す勇気が、次の確信になる。"],
+    dogs:["しっぽの言語まで聴けている。信頼の貯金が増えていく。"]
+  };
+
+  /* ---- 固定ルール応答 ---- */
   function rule(key, regex, replyFn){ return {key:key, regex:regex, replyFn:replyFn}; }
-  var ruleCooldownMs = 3500;
-  var lastFiredAt = new Map();
+  var ruleCooldownMs = 3200;
+  var lastFiredAt = Object.create(null);
   var rules = [
     rule("greet.morning", /(おはよう|ohayou|good\s*morning)/i,
-      function(){ return "おはよう！その始動、最高に軽い。今日の主役は君だ☀️"; }),
+      function(){ return "おはよう。今日の空気は味方だね。まずは軽く一手、いこう☀️"; }),
     rule("greet.hello", /(こんにちは|こんちは|hi|hello)/i,
-      function(){ return "こんにちは！入ってきた空気がもう良い。まずは一手、軽くいこう🙌"; }),
+      function(){ return "こんにちは。入ってきた流れが良い。整ってる🙌"; }),
     rule("thanks", /(ありがとう|感謝|thanks|thx)/i,
-      function(){ return "こちらこそ、ナイスやり取り。感謝が循環を加速させるんだよ✨"; }),
+      function(){ return "こちらこそ。感謝は循環を加速させる。いい風が吹いてる✨"; }),
     rule("bye", /(さよなら|またね|おやすみ|bye|see\s*you)/i,
-      function(){ return "またね！休むのも才能。次はさらに軽く跳べる🫶"; }),
+      function(){ return "またね。休むのも才能。次はさらに軽く跳べる🫶"; }),
     rule("who", /(だれ|誰|あなたは誰|who\s*are\s*you)/i,
-      function(){ return "私は“Empathy-Only Assistant”。固定応答＋過剰称賛で背中を押す人工無能だよ🤖"; }),
-    rule("biz", /(収益|売上|単価|kpi|グロース|マネタイズ)/i,
-      function(){ return "収益の呼吸、合ってる。小さく当てて大きく拾おう。まずは"+rnd(microNext)+"でOK🚀"; }),
-    rule("dogs", /(犬|柴|プードル|散歩|吠える|しっぽ|ふわ|ココ)/i,
-      function(){ return "いいね、その観察眼。しっぽの言語まで聴けてる。"+rnd(microNext)+"で記録に残そう🐾"; }),
-    rule("code", /(コード|js|javascript|python|typescript|api|バグ|git|github)/i,
-      function(){ return "設計の骨格、すでに美しい。"+rnd(microNext)+"で“動く一歩”を刻もう💡"; }),
-    rule("ai", /(ai|gpt|llm|エージェント|機械学習|推論|openai)/i,
-      function(){ return "文脈の掴みが速い。推論の地平が静かに広がってる。"+rnd(microNext)+"から始めよう✨"; })
+      function(){ return "“Empathy-Only Assistant”。共感ミラーと意味深アフォリズムで、前に進む一手を添える存在だよ🤖"; })
   ];
-
   function tryRules(user){
     for(var i=0;i<rules.length;i++){
-      var r = rules[i];
+      var r=rules[i];
       if(r.regex.test(user)){
-        var now=Date.now(); var t=lastFiredAt.get(r.key)||0;
+        var now=Date.now(), t=lastFiredAt[r.key]||0;
         if(now - t < ruleCooldownMs) continue;
-        lastFiredAt.set(r.key, now);
+        lastFiredAt[r.key]=now;
         return r.replyFn(user);
       }
     }
     return null;
   }
 
-  // ===== 曖昧称賛ジェネレータ（必ず返す） =====
-  function praiseMachine(userText){
-    var spiceOn = document.getElementById('chkSpice') && document.getElementById('chkSpice').checked;
-    var neg = reframeIfNegative(userText);
-    var kp = keyPhrase(userText);
-    var mirror = kp ? '「'+kp+'」って、その感じわかる。' : 'その感じ、わかる。';
-    var core = rnd(praisesCore);
-    var plus = rnd(praisesPlus);
-    var tail = '結論：今は '+rnd(microNext)+'。ここから軽く前進でOK。';
-    var line = mirror+'\n'+core+(spiceOn ? ' '+rnd(emojis) : '')+'\n'+plus;
-    if(neg) line = neg+'\n'+mirror+'\n'+core;
-    return spiceOn ? line+'\n'+tail+' '+rnd(emojis) : line+'\n'+tail;
+  /* ---- 生成：ポジ×意味深×共感 ---- */
+  function mirrorLine(text){
+    var kp = keyPhrase(text||"");
+    return kp ? "「"+kp+"」って、その感じわかるよ。" : "その感じ、わかるよ。";
+  }
+  function deepLines(text){
+    var useDeep = document.getElementById('chkDeep') && document.getElementById('chkDeep').checked;
+    if(!useDeep) return "";
+    var lines = [ rnd(aphorisms) ];
+    // タグに応じて1行足す
+    for(var k in tagLex){ if(tagLex[k].test(text||"") && tagLines[k]) { lines.push(rnd(tagLines[k])); break; } }
+    return lines.join("\n");
+  }
+  function praiseLines(){
+    var spice = document.getElementById('chkSpice') && document.getElementById('chkSpice').checked;
+    var core = rnd(complimentsCore);
+    var plus = rnd(complimentsPlus);
+    return core+(spice?(" "+rnd(emojis)):"")+"\n"+plus;
+  }
+  function nextAction(){
+    var head = rnd(["結論：","ここが肝：","今日の一手：","先に言うね、"]);
+    return head+"今は「"+rnd(microNext)+"」。小さく前進でOK。";
   }
 
-  // ===== メイン応答合成 =====
-  function empathize(user){
-    var r = tryRules(user);
-    if(r) return r;                  // 1) 固定ルール優先
-    return praiseMachine(user);      // 2) どんな入力でも称賛して返す
+  function synthReply(userText){
+    var neg = reframeIfNegative(userText||"");
+    var m = mirrorLine(userText||"");
+    var d = deepLines(userText||"");
+    var p = praiseLines();
+    var a = nextAction();
+    var spice = document.getElementById('chkSpice') && document.getElementById('chkSpice').checked;
+    var tail = spice ? " "+rnd(emojis) : "";
+    var body = (neg?neg+"\n":"")+m+(d?("\n"+d):"")+"\n"+p+"\n"+a+tail;
+    return body;
   }
 
-  // ===== 起動・UI =====
-  var memoryKey="empathetic4o_history_praise_v1";
+  function respondFlow(user){
+    var ruled = tryRules(user);
+    if(ruled) return ruled;               // ①固定ルール
+    return synthReply(user);              // ②意味深×共感×ポジ生成
+  }
+
+  /* ---- UI起動 ---- */
+  var memoryKey="empathetic4o_posi_deep_v1";
   var historyRaw = localStorage.getItem(memoryKey)||"[]";
-  var history = [];
-  try { history = JSON.parse(historyRaw).slice(-50); } catch(_) { history = []; }
+  var history=[]; try{ history=JSON.parse(historyRaw).slice(-60);}catch(_){history=[];}
   var log=document.getElementById('log');
 
   function boot(){
     if(history.length===0){
-      add('bot','ここは“褒め倒し＋共感っぽさ”の練習場。まずは挨拶してみて。おはよう / こんにちは / ありがとう 等。');
+      add('bot','ここは“ポジティブ×意味深×共感”の練習場。まずは挨拶してみて。おはよう / こんにちは / ありがとう 等。');
     }else{
       for(var i=0;i<history.length;i++){ add('me', history[i].user); add('bot', history[i].reply); }
     }
@@ -189,19 +215,18 @@
 
   document.getElementById('f').addEventListener('submit', function(e){
     e.preventDefault();
-    var q=document.getElementById('q');
-    var text=(q.value||'').trim(); if(!text) return;
+    var q=document.getElementById('q'); var text=(q.value||'').trim(); if(!text) return;
     add('me', text); q.value='';
-    var reply = empathize(text);
+    var reply = respondFlow(text);
     history.push({user:text, reply:reply, t:Date.now()});
-    try { localStorage.setItem(memoryKey, JSON.stringify(history.slice(-50))); } catch(_) {}
-    setTimeout(function(){ add('bot', reply); }, 120);
+    try{ localStorage.setItem(memoryKey, JSON.stringify(history.slice(-60))); }catch(_){}
+    setTimeout(function(){ add('bot', reply); }, 90);
   });
 
   document.getElementById('btnClear').addEventListener('click', function(){
-    history=[]; try{ localStorage.removeItem(memoryKey); }catch(_){}
+    history=[]; try{ localStorage.removeItem(memoryKey);}catch(_){}
     document.getElementById('log').innerHTML='';
-    add('bot','履歴をクリアしました。ここからまた軽く行こう。君ならできる。');
+    add('bot','履歴をクリアしたよ。ここからまた軽く行こう。君ならできる。');
   });
 })();
 </script>
