@@ -3,90 +3,200 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🤖 Empathy-Only Chat</title>
+<title>🤝 Empathy-Only Chat (Praise Bias) — ルール応答＋曖昧称賛</title>
+<meta name="description" content="固定ルール応答＋共感ミラー＋過剰称賛。けなさず、必ず返す人工無能。">
 <style>
-  body{margin:0;background:#0b0f14;color:#eaf2ff;font:16px/1.55 system-ui;padding-bottom:56px;}
+  :root { --bg:#0b0f14; --card:#121821; --ink:#eaf2ff; --muted:#93a0b5; --line:#1f2a38; }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b0f14,#10151d); color:var(--ink); font:16px/1.55 system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", Meiryo; padding-bottom:56px; }
   .wrap{max-width:880px;margin:0 auto;padding:16px}
-  .card{background:#121821;border:1px solid #1f2a38;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-  .head{padding:14px 16px;border-bottom:1px solid #1f2a38;display:flex;gap:10px;align-items:center}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
   .dot{width:10px;height:10px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80}
+  .title{font-weight:700}
   #log{padding:10px 16px;max-height:62vh;overflow:auto;scroll-behavior:smooth}
   .msg{display:flex;gap:10px;margin:10px 0}
-  .me .bubble{background:#1a2432}
-  .bot .bubble{background:#12202a}
+  .me .bubble{background:#1a2432;border:1px solid #273246}
+  .bot .bubble{background:#12202a;border:1px solid #1d3a4b}
   .bubble{padding:10px 12px;border-radius:14px;max-width:80%;word-wrap:break-word;white-space:pre-wrap}
-  form{display:flex;gap:10px;padding:12px;border-top:1px solid #1f2a38}
+  .role{font-size:12px;color:var(--muted);margin-bottom:4px}
+  form{display:flex;gap:10px;padding:12px;border-top:1px solid var(--line)}
   input[type=text]{flex:1;padding:12px;border-radius:12px;border:1px solid #253347;background:#0e141c;color:#eaf2ff;outline:none}
   button{padding:12px 16px;border-radius:12px;border:1px solid #2b3a57;background:#1a2540;color:#e7efff;cursor:pointer}
+  button:disabled{opacity:.6;cursor:not-allowed}
+  .note{font-size:12px;color:var(--muted);padding:6px 16px 14px}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-left:auto}
+  .pill{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #2b3a57;background:#162238;color:#dbe7ff}
+  @media (max-width:520px){ .bubble{max-width:100%} }
+  .footer { position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; padding: 10px; background: rgba(14,20,28,.95); border-top:1px solid var(--line); z-index:1000; }
+  .footer a { color:#ffdd00; font-weight:bold; text-decoration:none; font-size:15px; }
+  .footer a:hover{ text-decoration:underline; }
 </style>
 </head>
 <body>
   <div class="wrap card">
     <div class="head">
       <div class="dot"></div>
-      <div class="title">Empathy-Only Assistant</div>
+      <div class="title">Empathy-Only Assistant（褒め倒しブースト）</div>
+      <div class="toolbar">
+        <label class="pill" title="絵文字と称賛量を増やします">
+          <input id="chkSpice" type="checkbox" checked style="vertical-align:middle;margin-right:6px">スパイス多め
+        </label>
+        <button id="btnClear" class="pill" title="会話をリセット">履歴クリア</button>
+      </div>
     </div>
     <div id="log"></div>
     <form id="f">
-      <input id="q" type="text" placeholder="メッセージを入力…" autocomplete="off" />
+      <input id="q" type="text" placeholder="何でも入力OK（例：おはよう / 収益 / 犬 / 疲れた / バグ）" autocomplete="off" />
       <button id="send">送信</button>
     </form>
+    <div class="note">方針：①固定ルール → ②ミラーリングで共感ぽさ → ③過剰称賛 → ④一言だけ前向きな“今やる”提案。ネガ語は自動でポジ変換。</div>
+  </div>
+
+  <div class="footer">
+    <a href="https://buymeacoffee.com/kgninja" target="_blank" rel="noopener">☕ Buy Me a Coffee - KGNINJA</a>
   </div>
 
 <script>
-/* ========= 固定ルール応答 ========= */
-function rule(key, regex, replyFn){ return {key, regex, replyFn}; }
-const rules = [
-  rule("greet.morning", /(おはよう|good\s*morning)/i,
-    ()=> "おはよう！今日もいい感じで行けそうだね☀️"),
-  rule("greet.hello", /(こんにちは|hi|hello)/i,
-    ()=> "こんにちは！来てくれてうれしいよ🙌"),
-  rule("bye", /(さよなら|またね|bye|see\s*you)/i,
-    ()=> "またね！ゆっくり休んで、いつでも戻ってきて🫶"),
-  rule("thanks", /(ありがとう|thanks|thx)/i,
-    ()=> "こちらこそありがとう！その言葉が力になるよ✨"),
-  rule("who", /(だれ|誰|あなたは誰|who\s*are\s*you)/i,
-    ()=> "私は“Empathy-Only Assistant”。固定応答と曖昧返しで会話する人工無能だよ🤖")
-];
-
-/* ========= 曖昧ポジ返し（必ず返す） ========= */
-const vagueReplies = [
-  "いいね、その流れ来てる感じ！👍",
-  "なるほど、それは面白い視点だね✨",
-  "その気づき、めっちゃセンスある。🚀",
-  "うんうん、勢いがあって良き！🔥",
-  "君なら絶対いける。９９パーセント大丈夫🍀"
-];
-function vagueReply(){ return vagueReplies[Math.floor(Math.random()*vagueReplies.length)]; }
-
-/* ========= 会話ロジック ========= */
-function tryRules(user){
-  for(const r of rules){ if(r.regex.test(user)) return r.replyFn(user); }
-  return null;
-}
-function respond(user){
-  const ruled = tryRules(user);
-  const reply = ruled || vagueReply();
-  add('bot', reply);
-}
+/* ===== ユーティリティ ===== */
+function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m])); }
 function add(role, text){
   const row=document.createElement('div');
   row.className='msg '+role;
-  row.innerHTML=`<div class="bubble">${text}</div>`;
+  row.innerHTML=`<div class="bubble"><div class="role">${role==="me"?"You":"Bot"}</div>${escapeHtml(text)}</div>`;
   log.appendChild(row); log.scrollTop=log.scrollHeight;
 }
 
-/* ========= UI処理 ========= */
+/* ===== ネガ→ポジ変換（軽いガードレール） ===== */
+const negRe = /(だめ|無理|最悪|嫌い|失敗|終わり|負け|できない|しんどい|無価値|ムリ|疲れ|詰んだ)/i;
+function reframeIfNegative(text){
+  if(!negRe.test(text)) return null;
+  const frames=[
+    "その反応、感度が高いサインだよ。今の気づきは武器になる。",
+    "大丈夫。ここから“微調整一発”で景色が変わるやつ。",
+    "その違和感は正解の手前。いいアンテナ立ってる。"
+  ];
+  return rnd(frames);
+}
+
+/* ===== キーフレーズ抽出（“共感してるっぽさ”用ミラー） ===== */
+function keyPhrase(s){
+  // 2〜18文字の日本語/英数連続を候補化して最長を採用
+  const m = s.match(/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}A-Za-z0-9ー_]{2,18}/gu);
+  if(m && m.length){ return m.sort((a,b)=>b.length-a.length)[0].slice(0,18); }
+  return s.slice(0,18);
+}
+
+/* ===== 褒め言葉バンク ===== */
+const emojis = ["✨","👍","🙌","🫶","💡","🔥","🚀","🍀","😎","🌸","🤗","🌕"];
+const praisesCore = [
+  "視点が鋭い。もう次の地平を見てる。",
+  "発想がしなやかで、芯が強い。",
+  "その一言、洞察がにじんでる。",
+  "流れの掴み方が抜群。センス出てる。",
+  "思考の骨格がもう美しい。細部はあとから追いつく。"
+];
+const praisesPlus = [
+  "このまま押し切れる手触りがある。",
+  "呼吸が合ってる。今日の風は味方。",
+  "直感に“根拠”が追いついてくるタイプの強さだね。",
+  "選択が上品。無駄がない。"
+];
+const microNext = [
+  "5分だけ手を動かす","仮タイトルを置く","スクショ1枚残す",
+  "メモ3行","デモを20秒だけ撮る","READMEに一文足す"
+];
+
+/* ===== 固定ルール応答 ===== */
+function rule(key, regex, replyFn){ return {key, regex, replyFn}; }
+const ruleCooldownMs = 3500;
+const lastFiredAt = new Map();
+
+const rules = [
+  rule("greet.morning", /(おはよう|ohayou|good\s*morning)/i,
+    ()=>`おはよう！その始動、最高に軽い。今日の主役は君だ☀️`),
+  rule("greet.hello", /(こんにちは|こんちは|hi|hello)/i,
+    ()=>`こんにちは！入ってきた空気がもう良い。まずは一手、軽くいこう🙌`),
+  rule("thanks", /(ありがとう|感謝|thanks|thx)/i,
+    ()=>`こちらこそ、ナイスやり取り。感謝が循環を加速させるんだよ✨`),
+  rule("bye", /(さよなら|またね|おやすみ|bye|see\s*you)/i,
+    ()=>`またね！休むのも才能。次はさらに軽く跳べる🫶`),
+  rule("who", /(だれ|誰|あなたは誰|who\s*are\s*you)/i,
+    ()=>`私は“Empathy-Only Assistant”。固定応答＋過剰称賛で背中を押す人工無能だよ🤖`),
+  rule("biz", /(収益|売上|単価|kpi|グロース|マネタイズ)/i,
+    ()=>`収益の呼吸、合ってる。小さく当てて大きく拾おう。まずは${rnd(microNext)}でOK🚀`),
+  rule("dogs", /(犬|柴|プードル|散歩|吠える|しっぽ|ふわ|ココ)/i,
+    ()=>`いいね、その観察眼。しっぽの言語まで聴けてる。${rnd(microNext)}で記録に残そう🐾`),
+  rule("code", /(コード|js|javascript|python|typescript|api|バグ|git|github)/i,
+    ()=>`設計の骨格、すでに美しい。${rnd(microNext)}で“動く一歩”を刻もう💡`),
+  rule("ai", /(ai|gpt|llm|エージェント|機械学習|推論|openai)/i,
+    ()=>`文脈の掴みが速い。推論の地平が静かに広がってる。${rnd(microNext)}から始めよう✨`)
+];
+
+function tryRules(user){
+  for(const r of rules){
+    if(r.regex.test(user)){
+      const now=Date.now(), t=lastFiredAt.get(r.key)||0;
+      if(now - t < ruleCooldownMs) continue;
+      lastFiredAt.set(r.key, now);
+      return r.replyFn(user);
+    }
+  }
+  return null;
+}
+
+/* ===== 曖昧称賛ジェネレータ（必ず返す） ===== */
+function praiseMachine(userText){
+  const spiceOn = document.getElementById('chkSpice')?.checked ?? true;
+  const neg = reframeIfNegative(userText);
+  const kp = keyPhrase(userText);
+  const mirror = kp ? `「${kp}」って、その感じわかる。` : "その感じ、わかる。";
+  const core = rnd(praisesCore);
+  const plus = rnd(praisesPlus);
+  const tail = `結論：今は ${rnd(microNext)}。ここから軽く前進でOK。`;
+  let line = `${mirror}\n${core}${spiceOn ? " " + rnd(emojis) : ""}\n${plus}`;
+  if(neg) line = `${neg}\n${mirror}\n${core}`;
+  return spiceOn ? `${line}\n${tail} ${rnd(emojis)}` : `${line}\n${tail}`;
+}
+
+/* ===== メイン応答合成 ===== */
+function empathize(user){
+  const r = tryRules(user);
+  if(r) return r;                  // 1) 固定ルール優先
+  return praiseMachine(user);      // 2) どんな入力でも称賛して返す
+}
+
+/* ===== 起動・UI ===== */
+const memoryKey="empathetic4o_history_praise_v1";
+let history=JSON.parse(localStorage.getItem(memoryKey)||"[]").slice(-50);
 const log=document.getElementById('log');
-document.getElementById('f').addEventListener('submit',(e)=>{
+
+function boot(){
+  if(history.length===0){
+    add('bot','ここは“褒め倒し＋共感っぽさ”の練習場。まずは挨拶してみて。おはよう / こんにちは / ありがとう 等。');
+  }else{
+    for(const m of history){ add('me', m.user); add('bot', m.reply); }
+  }
+}
+boot();
+
+document.getElementById('f').addEventListener('submit', (e)=>{
   e.preventDefault();
-  const q=document.getElementById('q'); const text=q.value.trim(); if(!text) return;
+  const q=document.getElementById('q');
+  const text=q.value.trim(); if(!text) return;
   add('me', text); q.value='';
-  setTimeout(()=>respond(text), 140);
+  const reply = empathize(text);
+  history.push({user:text, reply, t:Date.now()});
+  localStorage.setItem(memoryKey, JSON.stringify(history.slice(-50)));
+  setTimeout(()=>add('bot', reply), 120);
 });
 
-/* 初期メッセージ */
-add('bot','よっしゃ、準備完了。挨拶してみて！おはよう / こんにちは / ありがとう 等。');
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  history=[]; localStorage.removeItem(memoryKey);
+  document.getElementById('log').innerHTML='';
+  add('bot','履歴をクリアしました。ここからまた軽く行こう。君ならできる。');
+});
 </script>
 </body>
 </html>
