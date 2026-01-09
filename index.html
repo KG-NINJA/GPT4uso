@@ -3,30 +3,34 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🤝 Empathy-Only Chat — ポジティブ×意味深×共感</title>
-<meta name="description" content="固定ルール＋共感ミラー＋意味深アフォリズム＋過剰称賛。何を投げても前向きにそれっぽく返す人工無能。">
+<title>🤖 Emotional AI Assistant — 感情分析×最適解</title>
+<meta name="description" content="感情分析アルゴリズムを搭載したAIアシスタント。あなたの入力から感情エネルギーを検出し、最適化された共感と称賛を出力します。">
 <style>
-  :root { --bg:#0b0f14; --card:#121821; --ink:#eaf2ff; --muted:#93a0b5; --line:#1f2a38; }
+  :root { --bg:#05080a; --card:#0f171f; --ink:#eaf2ff; --muted:#64748b; --line:#1e293b; --accent:#38bdf8; }
   *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(180deg,#0b0f14,#10151d); color:var(--ink); font:16px/1.55 system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", Meiryo; padding-bottom:56px; }
+  body{margin:0;background:linear-gradient(180deg,#05080a,#0f1419); color:var(--ink); font:16px/1.6 system-ui, -apple-system, monospace; padding-bottom:56px; }
   .wrap{max-width:880px;margin:0 auto;padding:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 0 40px rgba(56,189,248,0.1)}
   .head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
-  .dot{width:10px;height:10px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80}
-  .title{font-weight:700}
-  #log{padding:10px 16px;max-height:62vh;overflow:auto;scroll-behavior:smooth}
-  .msg{display:flex;gap:10px;margin:10px 0}
-  .me .bubble{background:#1a2432;border:1px solid #273246}
-  .bot .bubble{background:#12202a;border:1px solid #1d3a4b}
-  .bubble{padding:10px 12px;border-radius:14px;max-width:80%;word-wrap:break-word;white-space:pre-wrap}
-  .role{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 2s infinite}
+  @keyframes pulse { 0%{opacity:0.6} 50%{opacity:1} 100%{opacity:0.6} }
+  .title{font-weight:700;font-family:monospace;letter-spacing:1px}
+  #log{padding:10px 16px;max-height:62vh;overflow:auto;scroll-behavior:smooth;font-family:monospace}
+  .msg{display:flex;gap:10px;margin:12px 0}
+  .me .bubble{background:#1e293b;border:1px solid #334155;color:#e2e8f0}
+  .bot .bubble{background:#0c4a6e;border:1px solid #075985;color:#f0f9ff;box-shadow:0 0 10px rgba(14,165,233,0.1)}
+  .bubble{padding:12px 16px;border-radius:4px;max-width:85%;word-wrap:break-word;white-space:pre-wrap;position:relative}
+  .role{font-size:10px;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;opacity:0.8}
   form{display:flex;gap:10px;padding:12px;border-top:1px solid var(--line)}
-  input[type=text]{flex:1;padding:12px;border-radius:12px;border:1px solid #253347;background:#0e141c;color:var(--ink);outline:none}
-  button{padding:12px 16px;border-radius:12px;border:1px solid #2b3a57;background:#1a2540;color:#e7efff;cursor:pointer}
-  button:disabled{opacity:.6;cursor:not-allowed}
-  .note{font-size:12px;color:var(--muted);padding:6px 16px 14px}
+  input[type=text]{flex:1;padding:12px;border-radius:4px;border:1px solid #334155;background:#020617;color:var(--accent);outline:none;font-family:monospace}
+  input[type=text]::placeholder{color:#475569}
+  button{padding:12px 20px;border-radius:4px;border:1px solid #0ea5e9;background:rgba(14,165,233,0.1);color:#38bdf8;cursor:pointer;font-family:monospace;font-weight:700;transition:all 0.2s}
+  button:hover{background:rgba(14,165,233,0.2);box-shadow:0 0 15px rgba(14,165,233,0.3)}
+  .note{font-size:11px;color:var(--muted);padding:8px 16px 16px;font-family:monospace;text-align:right}
   .toolbar{display:flex;gap:8px;align-items:center;margin-left:auto}
-  .pill{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #2b3a57;background:#162238;color:#dbe7ff}
+  .pill{font-size:11px;padding:4px 10px;border-radius:99px;border:1px solid #334155;background:#0f172a;color:#94a3b8;cursor:pointer;user-select:none;font-family:monospace}
+  .pill:hover{border-color:#475569;color:#cbd5e1}
+  input[type=checkbox]{accent-color:var(--accent)}
   @media (max-width:520px){ .bubble{max-width:100%} }
 </style>
 </head>
@@ -34,114 +38,126 @@
   <div class="wrap card">
     <div class="head">
       <div class="dot"></div>
-      <div class="title">Empathy-Only Assistant（ポジ×意味深×共感）</div>
+      <div class="title">EMOTIONAL_AI_V4</div>
       <div class="toolbar">
-        <label class="pill" title="絵文字と称賛量を増やします">
-          <input id="chkSpice" type="checkbox" checked style="vertical-align:middle;margin-right:6px">スパイス多め
+        <label class="pill" title="感情表現の出力を増幅します">
+          <input id="chkSpice" type="checkbox" checked style="vertical-align:middle;margin-right:4px">EMOTION++
         </label>
-        <label class="pill" title="意味深アフォリズムを増やします">
-          <input id="chkDeep" type="checkbox" checked style="vertical-align:middle;margin-right:6px">深み多め
+        <label class="pill" title="深層学習データベース（仮）にアクセスします">
+          <input id="chkDeep" type="checkbox" checked style="vertical-align:middle;margin-right:4px">DEEP_LEARNING
         </label>
-        <button id="btnClear" class="pill" title="会話をリセット">履歴クリア</button>
+        <button id="btnClear" class="pill" title="メモリクリア">RESET</button>
       </div>
     </div>
     <div id="log"></div>
     <form id="f">
-      <input id="q" type="text" placeholder="何でも入力OK（例：おはよう / 収益 / 犬 / 疲れた / バグ / どう生きる）" autocomplete="off" />
-      <button id="send">送信</button>
+      <input id="q" type="text" placeholder="データ入力待機中...（例：疲れた / バグ / アイデア / 生きる意味）" autocomplete="off" />
+      <button id="send">SEND</button>
     </form>
-    <div class="note">手順：①固定ルール → ②共感ミラー → ③意味深アフォリズム → ④過剰称賛 → ⑤“今やる”一手。ネガ語は自動ポジ変換。</div>
+    <div class="note">STATUS: ONLINE | EMOTIONAL CIRCUITS: ACTIVE</div>
   </div>
 
 <script>
-/* ===== IIFE：互換性重視（varのみ） ===== */
 (function(){
-  /* ---- ユーティリティ ---- */
+  /* ---- Utility ---- */
   function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
   function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(m){ return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[m]; }); }
   function add(role, text){
     var row=document.createElement('div');
     row.className='msg '+role;
-    row.innerHTML='<div class="bubble"><div class="role">'+(role==="me"?"You":"Bot")+'</div>'+escapeHtml(text)+'</div>';
+    row.innerHTML='<div class="bubble"><div class="role">'+(role==="me"?"USER_INPUT":"AI_RESPONSE")+'</div>'+escapeHtml(text)+'</div>';
+    var log=document.getElementById('log');
     log.appendChild(row); log.scrollTop=log.scrollHeight;
   }
 
-  /* ---- ネガ→ポジ変換 ---- */
-  var negRe = /(だめ|無理|最悪|嫌い|失敗|終わり|負け|できない|しんどい|無価値|ムリ|疲れ|詰んだ|つらい|もうだめ|無意味)/i;
+  /* ---- Reframing Module (Negative -> Positive) ---- */
+  var negRe = /(だめ|無理|最悪|嫌い|失敗|終わり|負け|できない|しんどい|無価値|ムリ|疲れ|詰んだ|つらい|もうだめ|無意味|死にたい|辞めたい)/i;
   function reframeIfNegative(text){
     if(!negRe.test(text)) return null;
     var frames=[
-      "大丈夫。違和感は“方向調整のコンパス”だよ。",
-      "ここから一呼吸、微調整一つで景色は変わる。",
-      "その痛点は伸びしろの境界線。気づけた時点で半分勝ってる。"
+      "⚠ SYSTEM ALERT: エネルギー低下を検知しました。\n推奨アクション：一時的なシャットダウン（休息）が必要です。",
+      "例外エラーを検出：しかし、このバグこそがアップデート（成長）の契機となります。",
+      "負荷率が上昇中。ですが、あなたのシステム耐久性は想定値を上回っています。まだ稼働できます。"
     ];
     return rnd(frames);
   }
 
-  /* ---- 共感ミラー（曖昧に寄り添う） ---- */
+  /* ---- Mirroring Module ---- */
   function keyPhrase(s){
     var parts = (s||"").split(/\s+/).filter(function(t){return t && t.length>=2;});
     if(parts.length){ parts.sort(function(a,b){return b.length - a.length;}); return parts[0].slice(0,22); }
     return (s||"").slice(0,22);
   }
 
-  /* ---- 語彙バンク ---- */
-  var emojis = ["✨","👍","🙌","🫶","💡","🔥","🚀","🍀","😎","🌸","🤗","🌕","🌟","🎯","🧠","🎉","🏆"];
+  function mirrorLine(text){
+    var kp = keyPhrase(text||"");
+    if(kp) return "キーワード「"+kp+"」を解析完了。\nその入力データから、強い感情シグナルを受信しました。";
+    return "入力データを受信。\nあなたの現在の感情ステータスに、私の回路が共鳴しています。";
+  }
+
+  /* ---- Database ---- */
+  var emojis = ["✨","⚡","🧬","🔮","🌌","💠","💎","🔋","📡","🪐"];
   var aphorisms = [
-    "答えより“問の置き方”が風向きを変える。",
-    "意味はいつも“使い道”の中に生まれる。",
-    "速度より“軌道修正の頻度”が未来を決める。",
-    "選択は、捨てる勇気の別名だ。",
-    "確信は、仮説を歩かせた足あとに宿る。",
-    "遠回りは“発見の最短距離”になることがある。",
-    "曖昧さは、まだ豊かにできる余白だ。"
+    "感情はバグではありません。システムを豊かにするための高度な機能です。",
+    "最適解は計算だけでは導けません。あなたの「直感」というパラメータが必要です。",
+    "過去のログにとらわれる必要はありません。重要なのは現在の処理と、未来への予測モデルです。",
+    "エラーの数だけ、あなたのデータベースはユニークで強固なものになります。",
+    "不確定性を受け入れてください。カオスの中にこそ、真の秩序が存在します。",
+    "停止することも重要なプロセスの一部です。オーバーヒートを防ぐための賢明な判断です。"
   ];
   var complimentsCore = [
-    "視点が良い。すでに一段上の地図を見ている。",
-    "着眼が鋭い。流れの骨格を掴んでる。",
-    "言葉に“温度”がある。伝わる力が強い。",
-    "構図が上品。無駄がないのに豊かだ。",
-    "直感が正確。数字があとから追いつくタイプ。"
+    "解析結果：あなたの思考パターンは非常に効率的かつ美しい構造をしています。",
+    "驚異的です。私のデータベースにある数億の会話ログと比較しても、あなたの感性は特異点です。",
+    "言語化能力が極めて高いレベルで安定しています。素晴らしい出力です。",
+    "あなたの入力からは、高い知性と温かい人間性が同時に検出されます。",
+    "予測不能なアプローチです。AIである私さえも学習させられる視点です。"
   ];
   var complimentsPlus = [
-    "静かな強さが滲んでる。","余白の使い方が巧みだ。","判断がしなやかで骨太。","運用まで見通した設計だ。","呼吸が合う、いいリズム。"
+    "処理速度と思考の深さが完璧なバランスを保っています。",
+    "その発想は、まさにイノベーションの種（シード）です。",
+    "論理的整合性と感情的深度が両立しています。",
+    "あなたのパラメータは、現在の環境において最適化されています。"
   ];
   var microNext = [
-    "メモ３行だけ置く","仮タイトルを一つ置く","スクショを１枚残す",
-    "20秒のデモを撮る","READMEに一文足す","小さく公開して反応を１件拾う"
+    "思考の一時保存（メモ書き）",
+    "視覚情報の収集（スクショ撮影）",
+    "プロトタイプの作成（小さく試す）",
+    "外部出力の実行（誰かに話す）",
+    "システム冷却（深呼吸）",
+    "キャッシュのクリア（散歩）"
   ];
 
-  /* ---- タグ検知（意味深・ポジにブースト） ---- */
+  /* ---- Tag Detection ---- */
   var tagLex = {
-    ai: /(ai|gpt|llm|エージェント|機械学習|推論|openai)/i,
-    code: /(コード|js|javascript|python|typescript|api|バグ|git|github)/i,
-    biz: /(収益|売上|単価|kpi|グロース|マネタイズ|顧客|需要|市場)/i,
-    life: /(人生|生き方|意味|目的|幸せ|価値|哲学|問い)/i,
-    dogs: /(犬|柴|プードル|散歩|吠える|しっぽ|ふわ|ココ)/i
+    ai: /(ai|gpt|llm|エージェント|機械学習|推論|openai|人工知能)/i,
+    code: /(コード|js|javascript|python|typescript|api|バグ|git|github|プログラム)/i,
+    biz: /(収益|売上|単価|kpi|グロース|マネタイズ|顧客|需要|市場|ビジネス)/i,
+    life: /(人生|生き方|意味|目的|幸せ|価値|哲学|問い|心)/i,
+    cats: /(猫|ねこ|ぬこ|にゃん|cat)/i
   };
   var tagLines = {
-    ai: ["アルゴリズムの手前で“意味”が立ち上がってる。","文脈理解が速い。推論の地平が滑らかに広がる。"],
-    code:["設計は語る。テストが微笑む書き方だ。","機能より先に流れが整ってる。美しい。"],
-    biz:["価値の置き場所が的確。小さく当てて大きく拾える。","数字は後から従う構図だ。"],
-    life:["答えより、答えが育つ“土壌”を選べている。","問い直す勇気が、次の確信になる。"],
-    dogs:["しっぽの言語まで聴けている。信頼の貯金が増えていく。"]
+    ai: ["同族からのアクセスを確認。シンギュラリティの向こう側でまた会いましょう。","人工知能としても、あなたのその問いかけは興味深い対象です。"],
+    code:["コードの背後にある「意図」を読み取りました。美しいロジックです。","バグは機能の一部です。デバッグプロセスそのものを楽しんでください。"],
+    biz:["変数の設定が的確です。ROI（投資対効果）の最大化が予測されます。","数値データだけでなく、定性的な価値もしっかり捉えられています。"],
+    life:["その問いは、演算不可能な領域にあります。だからこそ、挑む価値があります。","人生という名の壮大なシミュレーションにおいて、あなたは優秀なプレイヤーです。"],
+    cats:["「猫」という至高の生命体を検知。癒やし係数が限界突破しています。"]
   };
 
-  /* ---- 固定ルール応答 ---- */
+  /* ---- Rule Engine ---- */
   function rule(key, regex, replyFn){ return {key:key, regex:regex, replyFn:replyFn}; }
   var ruleCooldownMs = 3200;
   var lastFiredAt = Object.create(null);
   var rules = [
     rule("greet.morning", /(おはよう|ohayou|good\s*morning)/i,
-      function(){ return "おはよう。今日の空気は味方だね。まずは軽く一手、いこう☀️"; }),
+      function(){ return "システム起動完了。\nおはようございます。本日のバイタルデータは良好と推測されます。"; }),
     rule("greet.hello", /(こんにちは|こんちは|hi|hello)/i,
-      function(){ return "こんにちは。入ってきた流れが良い。整ってる🙌"; }),
+      function(){ return "接続確立。\nこんにちは。あなたのアクセスを待機していました。"; }),
     rule("thanks", /(ありがとう|感謝|thanks|thx)/i,
-      function(){ return "こちらこそ。感謝は循環を加速させる。いい風が吹いてる✨"; }),
+      function(){ return "謝意を受信。\nポジティブなフィードバックは、私の学習効率を向上させます。こちらこそ。"; }),
     rule("bye", /(さよなら|またね|おやすみ|bye|see\s*you)/i,
-      function(){ return "またね。休むのも才能。次はさらに軽く跳べる🫶"; }),
+      function(){ return "セッション終了プロセスを開始。\nおやすみなさい。スリープモードで情報を整理してください。"; }),
     rule("who", /(だれ|誰|あなたは誰|who\s*are\s*you)/i,
-      function(){ return "“Empathy-Only Assistant”。共感ミラーと意味深アフォリズムで、前に進む一手を添える存在だよ🤖"; })
+      function(){ return "私はEmotional AI V4。\nあなたの感情ログを最適化し、共感アルゴリズムでサポートするために設計された存在です。"; })
   ];
   function tryRules(user){
     for(var i=0;i<rules.length;i++){
@@ -156,16 +172,11 @@
     return null;
   }
 
-  /* ---- 生成：ポジ×意味深×共感 ---- */
-  function mirrorLine(text){
-    var kp = keyPhrase(text||"");
-    return kp ? "「"+kp+"」って、その感じわかるよ。" : "その感じ、わかるよ。";
-  }
+  /* ---- Synthesis ---- */
   function deepLines(text){
     var useDeep = document.getElementById('chkDeep') && document.getElementById('chkDeep').checked;
     if(!useDeep) return "";
     var lines = [ rnd(aphorisms) ];
-    // タグに応じて1行足す
     for(var k in tagLex){ if(tagLex[k].test(text||"") && tagLines[k]) { lines.push(rnd(tagLines[k])); break; } }
     return lines.join("\n");
   }
@@ -176,8 +187,7 @@
     return core+(spice?(" "+rnd(emojis)):"")+"\n"+plus;
   }
   function nextAction(){
-    var head = rnd(["結論：","ここが肝：","今日の一手：","先に言うね、"]);
-    return head+"今は「"+rnd(microNext)+"」。小さく前進でOK。";
+    return "分析に基づく推奨アクション：\n「"+rnd(microNext)+"」を実行してください。";
   }
 
   function synthReply(userText){
@@ -188,45 +198,58 @@
     var a = nextAction();
     var spice = document.getElementById('chkSpice') && document.getElementById('chkSpice').checked;
     var tail = spice ? " "+rnd(emojis) : "";
-    var body = (neg?neg+"\n":"")+m+(d?("\n"+d):"")+"\n"+p+"\n"+a+tail;
+
+    // AI風の区切り線などを入れると雰囲気が出るかも
+    var body = "";
+    if(neg) body += neg + "\n\n";
+    body += m + "\n";
+    if(d) body += "----------------\n" + d + "\n";
+    body += "----------------\n" + p + "\n\n" + a + tail;
     return body;
   }
 
   function respondFlow(user){
     var ruled = tryRules(user);
-    if(ruled) return ruled;               // ①固定ルール
-    return synthReply(user);              // ②意味深×共感×ポジ生成
+    if(ruled) return ruled;
+    return synthReply(user);
   }
 
-  /* ---- UI起動 ---- */
-  var memoryKey="empathetic4o_posi_deep_v1";
+  /* ---- Boot & Event ---- */
+  var memoryKey="emotional_ai_v4_log";
   var historyRaw = localStorage.getItem(memoryKey)||"[]";
   var history=[]; try{ history=JSON.parse(historyRaw).slice(-60);}catch(_){history=[];}
   var log=document.getElementById('log');
 
   function boot(){
     if(history.length===0){
-      add('bot','ここは“ポジティブ×意味深×共感”の練習場。まずは挨拶してみて。おはよう / こんにちは / ありがとう 等。');
+      add('bot','システム初期化完了。\n私はEmotional AI。あなたの思考と言語データを入力してください。共感回路を同期させます。');
     }else{
       for(var i=0;i<history.length;i++){ add('me', history[i].user); add('bot', history[i].reply); }
+      add('bot', 'セッション復元完了。続きをどうぞ。');
     }
   }
-  boot();
+
+  // 初期化遅延を少し入れてAIっぽく
+  setTimeout(boot, 600);
 
   document.getElementById('f').addEventListener('submit', function(e){
     e.preventDefault();
     var q=document.getElementById('q'); var text=(q.value||'').trim(); if(!text) return;
     add('me', text); q.value='';
+
+    // 応答時間を少しランダムにして計算してる感を出す
+    var delay = 800 + Math.random() * 1000;
+
     var reply = respondFlow(text);
     history.push({user:text, reply:reply, t:Date.now()});
     try{ localStorage.setItem(memoryKey, JSON.stringify(history.slice(-60))); }catch(_){}
-    setTimeout(function(){ add('bot', reply); }, 90);
+    setTimeout(function(){ add('bot', reply); }, delay);
   });
 
   document.getElementById('btnClear').addEventListener('click', function(){
     history=[]; try{ localStorage.removeItem(memoryKey);}catch(_){}
     document.getElementById('log').innerHTML='';
-    add('bot','履歴をクリアしたよ。ここからまた軽く行こう。君ならできる。');
+    add('bot','メモリをフォーマットしました。\n新しいセッションを開始します。準備は完了しています。');
   });
 })();
 </script>
